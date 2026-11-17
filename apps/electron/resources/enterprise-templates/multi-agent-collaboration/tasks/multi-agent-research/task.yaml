@@ -1,0 +1,184 @@
+id: multi-agent-research
+title: Multi-Agent Research
+goal: >
+  Coordinate multiple research sessions to investigate a complex topic from
+  multiple angles, analyze findings, synthesize a report, and verify accuracy.
+acceptance_criteria: >
+  The final report must include an executive summary, key findings with evidence,
+  and all claims must be traceable to research summaries. The independent review
+  must confirm no unsupported assertions remain.
+runner: conduct
+skills:
+  - multi-agent-collaboration
+params:
+  - name: topic
+    type: string
+defaults:
+  permissionMode: allow-all
+token_budget: 500000
+max_iterations: 2
+nodes:
+  # ── Coordinator ─────────────────────────────────────────────
+  - id: coordinator
+    kind: session
+    title: Research Coordinator
+    prompt: >
+      You are the research coordinator. The user's research topic is: ${params.topic}
+
+      Your job is to:
+      1. Break this topic into 2-3 independent investigation angles
+      2. For each angle, write a clear research brief to scratch/stream-{a,b,c}.md
+         specifying what to investigate, what sources to check, and what output is expected
+      3. Summarize the investigation plan
+
+      Be specific — each stream must have a distinct focus area. Do not duplicate.
+      Write stream-a.md, stream-b.md, and stream-c.md to the scratch directory.
+
+  # ── Research Stream A ─────────────────────────────────────────
+  - id: research-a
+    kind: session
+    title: Research Stream A
+    prompt: >
+      You are research agent A. Read scratch/stream-a.md for your assigned research angle
+      (topic: ${params.topic}).
+
+      Investigate thoroughly:
+      - Gather facts, data, and evidence from available sources
+      - Record every finding with its source
+      - Note your confidence level (high/medium/low)
+      - Save structured notes to scratch/research-stream-a.md
+
+      Do NOT speculate — only report what you can support with evidence.
+      If you cannot find information on a sub-topic, say so explicitly.
+    depends_on:
+      - coordinator
+    inputs:
+      streamBrief: "${nodes.coordinator.output}"
+    retry:
+      limit: 2
+      when: error
+
+  # ── Research Stream B ─────────────────────────────────────────
+  - id: research-b
+    kind: session
+    title: Research Stream B
+    prompt: >
+      You are research agent B. Read scratch/stream-b.md for your assigned research angle
+      (topic: ${params.topic}).
+
+      Investigate thoroughly:
+      - Gather facts, data, and evidence from available sources
+      - Record every finding with its source
+      - Note your confidence level (high/medium/low)
+      - Save structured notes to scratch/research-stream-b.md
+
+      Do NOT speculate — only report what you can support with evidence.
+      If you cannot find information on a sub-topic, say so explicitly.
+    depends_on:
+      - coordinator
+    inputs:
+      streamBrief: "${nodes.coordinator.output}"
+    retry:
+      limit: 2
+      when: error
+
+  # ── Research Stream C ─────────────────────────────────────────
+  - id: research-c
+    kind: session
+    title: Research Stream C
+    prompt: >
+      You are research agent C. Read scratch/stream-c.md for your assigned research angle
+      (topic: ${params.topic}).
+
+      Investigate thoroughly:
+      - Gather facts, data, and evidence from available sources
+      - Record every finding with its source
+      - Note your confidence level (high/medium/low)
+      - Save structured notes to scratch/research-stream-c.md
+
+      Do NOT speculate — only report what you can support with evidence.
+      If you cannot find information on a sub-topic, say so explicitly.
+    depends_on:
+      - coordinator
+    inputs:
+      streamBrief: "${nodes.coordinator.output}"
+    retry:
+      limit: 2
+      when: error
+
+  # ── Analysis ──────────────────────────────────────────────────
+  - id: analysis
+    kind: session
+    title: Cross-Stream Analysis
+    prompt: >
+      You are the analysis agent. The research topic was: ${params.topic}
+
+      Read all research summaries:
+      - scratch/research-stream-a.md
+      - scratch/research-stream-b.md
+      - scratch/research-stream-c.md
+
+      Then:
+      1. Identify patterns and themes across all streams
+      2. Note contradictions or disagreements between streams
+      3. Categorize findings by theme
+      4. Assess evidence strength for each finding
+      5. Identify gaps — what wasn't covered?
+      6. Save analysis to scratch/analysis.md
+    depends_on:
+      - research-a
+      - research-b
+      - research-c
+    retry:
+      limit: 1
+      when: empty
+
+  # ── Synthesis ─────────────────────────────────────────────────
+  - id: synthesis
+    kind: session
+    title: Report Synthesis
+    prompt: >
+      You are the synthesis agent. The research topic was: ${params.topic}
+
+      Read scratch/analysis.md and produce a structured research report:
+      1. Executive summary (2-3 paragraphs)
+      2. Key findings (grouped by theme, with evidence for each)
+      3. Areas of agreement and disagreement across sources
+      4. Gaps and limitations
+      5. Implications and recommendations
+      6. Methodology note
+
+      Write the report to output/research-report.md
+      Format it for readability with clear headings and bullet points.
+    depends_on:
+      - analysis
+    retry:
+      limit: 1
+      when: error
+
+  # ── Independent Review ────────────────────────────────────────
+  - id: review
+    kind: session
+    title: Independent Review
+    prompt: >
+      You are the review agent. The research topic was: ${params.topic}
+
+      Your job is quality assurance:
+      1. Read output/research-report.md (the draft report)
+      2. Read scratch/research-stream-*.md (original evidence)
+      3. For each claim in the report, verify it against the research summaries
+      4. Flag any unsupported assertions
+      5. Note any missing perspectives or biases
+      6. Check that the executive summary accurately reflects the findings
+      7. Save your review to scratch/review.md
+
+      Be thorough and critical — your job is to catch errors before delivery.
+      List specific line items that need correction.
+    depends_on:
+      - synthesis
+    retry:
+      limit: 1
+      when: error
+outputs:
+  report: "${nodes.synthesis.output}"
+  review: "${nodes.review.output}"

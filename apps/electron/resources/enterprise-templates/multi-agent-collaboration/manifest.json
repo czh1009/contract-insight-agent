@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "multi-agent-collaboration",
+  "name": "Multi-Agent Research",
+  "description": "Coordinate multiple agent sessions for complex research tasks. Uses Research, Analysis, Synthesis, and Review roles to produce thorough, verified outputs.",
+  "version": "1.0.0",
+  "category": "multi-agent",
+  "agentProfile": "linsight",
+  "skills": ["multi-agent-collaboration"],
+  "tasks": ["multi-agent-research"],
+  "requiredSources": [],
+  "starterPrompt": "starter-prompt.md"
+}

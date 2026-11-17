@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "policy-comparison",
+  "name": "Policy Comparison",
+  "description": "Compare two or more policy documents, regulations, or standards. Identifies differences, gaps, and alignment across versions or jurisdictions.",
+  "version": "1.0.0",
+  "category": "policy-comparison",
+  "agentProfile": "linsight",
+  "skills": ["policy-comparison"],
+  "requiredSources": [],
+  "starterPrompt": "starter-prompt.md"
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "ticket-assistant",
+  "name": "Ticket Assistant",
+  "description": "Assist with support tickets, issues, and requests. Analyzes ticket content, suggests resolutions, drafts responses, and tracks action items.",
+  "version": "1.0.0",
+  "category": "ticket-assistant",
+  "agentProfile": "linsight",
+  "skills": ["ticket-assistant"],
+  "requiredSources": [],
+  "starterPrompt": "starter-prompt.md"
+}

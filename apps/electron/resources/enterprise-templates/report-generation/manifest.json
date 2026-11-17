@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "report-generation",
+  "name": "Report Generation",
+  "description": "Generate structured reports from data, research, or analysis. Produces well-formatted documents with tables, charts descriptions, and actionable insights.",
+  "version": "1.0.0",
+  "category": "report-generation",
+  "agentProfile": "linsight",
+  "skills": ["report-generation"],
+  "requiredSources": [],
+  "starterPrompt": "starter-prompt.md"
+}

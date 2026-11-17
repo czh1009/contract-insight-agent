@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "document-review",
+  "name": "Document Review",
+  "description": "Review enterprise documents against standards, policies, or requirements. Produces evidence-based findings with risk levels and actionable recommendations.",
+  "version": "1.0.0",
+  "category": "document-review",
+  "agentProfile": "linsight",
+  "skills": ["document-review"],
+  "requiredSources": [],
+  "starterPrompt": "starter-prompt.md"
+}
