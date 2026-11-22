@@ -82,6 +82,8 @@ const EXPECTED_CHANNELS: string[] = [
   'drafts:get',
   'drafts:getAll',
   'drafts:set',
+  'enterpriseTemplates:install',
+  'enterpriseTemplates:list',
   'file:generateThumbnail',
   'file:openDialog',
   'file:read',

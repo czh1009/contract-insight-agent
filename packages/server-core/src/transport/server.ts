@@ -382,12 +382,12 @@ export class WsRpcServer implements RpcServer {
     let handshakeCompleted = false
     let handshakeTimeout: ReturnType<typeof setTimeout> | null = null
 
-    // Give the client 5 seconds to send a handshake
+    // Give the client 15 seconds to send a handshake
     handshakeTimeout = setTimeout(() => {
       if (!handshakeCompleted) {
         ws.close(4001, 'Handshake timeout')
       }
-    }, 5_000)
+    }, 15_000)
 
     ws.on('message', async (raw) => {
       let envelope: MessageEnvelope

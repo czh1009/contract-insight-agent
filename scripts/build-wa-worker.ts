@@ -78,9 +78,13 @@ async function main(): Promise<void> {
   const gitSha = resolveGitSha(ROOT_DIR);
   console.log(`📨 Building WhatsApp worker (bundling Baileys) — build ${buildId} (${gitSha})...`);
 
+  // Use the absolute path of the running Bun binary instead of "bun". On
+  // Windows a bare "bun" may resolve to a .cmd/.bat shim, and Bun refuses to
+  // pass args containing cmd.exe special characters (e.g. the quoted
+  // --define values below) through such wrappers (ERR_INVALID_ARG_VALUE).
   const proc = spawn({
     cmd: [
-      "bun", "run", "esbuild",
+      process.execPath, "run", "esbuild",
       SOURCE,
       "--bundle",
       "--platform=node",

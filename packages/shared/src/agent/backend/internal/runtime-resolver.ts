@@ -60,6 +60,50 @@ function resolveUpwards(base: string, relativePath: string, maxLevels = 4): stri
   return undefined;
 }
 
+/**
+ * Resolve bun from PATH for non-packaged runs (dev / headless server).
+ *
+ * Windows: `where bun` lists every shim npm/pnpm generated (`bun`, `bun.cmd`),
+ * and none of them are spawnable — CreateProcess cannot execute an extensionless
+ * shim or a batch file. The real binary lives next to the shim
+ * (`<prefix>/bun.exe` or `<prefix>/node_modules/bun/bin/bun.exe`), so map the
+ * shim to its binary instead of returning it.
+ */
+function resolveSystemBunPath(): string | undefined {
+  const isWindows = process.platform === 'win32';
+  const whichCmd = isWindows ? 'where' : 'which';
+  let stdout: string;
+  try {
+    stdout = execFileSync(whichCmd, ['bun'], { encoding: 'utf-8' });
+  } catch {
+    return undefined;
+  }
+
+  for (const raw of stdout.split(/\r?\n/)) {
+    const candidate = raw.trim();
+    if (!candidate) continue;
+
+    if (!isWindows) {
+      if (existsSync(candidate)) return candidate;
+      continue;
+    }
+
+    if (candidate.toLowerCase().endsWith('.exe')) {
+      if (existsSync(candidate)) return candidate;
+      continue;
+    }
+
+    const shimDir = dirname(candidate);
+    const realBinary = firstExistingPath([
+      join(shimDir, 'bun.exe'),
+      join(shimDir, 'node_modules', 'bun', 'bin', 'bun.exe'),
+    ]);
+    if (realBinary) return realBinary;
+  }
+
+  return undefined;
+}
+
 function resolveBundledRuntimePath(hostRuntime: BackendHostRuntimeContext): string | undefined {
   const bunBinary = process.platform === 'win32' ? 'bun.exe' : 'bun';
   const bunBasePath = process.platform === 'win32'
@@ -72,11 +116,7 @@ function resolveBundledRuntimePath(hostRuntime: BackendHostRuntimeContext): stri
   // Packaged apps must ship their own bundled bun — never resolve from PATH
   // to avoid picking up an incompatible system install.
   if (!hostRuntime.isPackaged) {
-    try {
-      const whichCmd = process.platform === 'win32' ? 'where' : 'which';
-      const systemBun = execFileSync(whichCmd, ['bun'], { encoding: 'utf-8' }).trim();
-      if (systemBun && existsSync(systemBun)) return systemBun;
-    } catch { /* system bun not found */ }
+    return resolveSystemBunPath();
   }
   return undefined;
 }
