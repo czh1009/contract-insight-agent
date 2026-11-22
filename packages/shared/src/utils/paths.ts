@@ -33,8 +33,8 @@ export function expandPath(inputPath: string, basePath?: string): string {
     return home;
   }
 
-  // Handle ~/ prefix
-  if (expanded.startsWith('~/')) {
+  // Handle ~/ prefix (and Windows-style ~\ produced by path.normalize)
+  if (expanded.startsWith('~/') || expanded.startsWith('~\\')) {
     expanded = join(home, expanded.slice(2));
   }
 
@@ -65,6 +65,13 @@ export function expandPath(inputPath: string, basePath?: string): string {
  */
 export function toPortablePath(absolutePath: string): string {
   if (!absolutePath) return absolutePath;
+
+  // Idempotent: already-portable paths must be returned untouched. Otherwise a
+  // second conversion on Windows runs path.normalize, which rewrites `~/` to
+  // `~\` and breaks expandPath's `~/` prefix detection.
+  if (absolutePath === '~' || absolutePath.startsWith('~/') || absolutePath.startsWith('~\\')) {
+    return absolutePath;
+  }
 
   const home = homedir();
   const normalized = normalize(absolutePath);

@@ -20,6 +20,7 @@ import { spawn } from "bun";
 import { execSync } from "child_process";
 import { existsSync, mkdirSync, statSync } from "fs";
 import { join } from "path";
+import * as esbuild from "esbuild";
 
 /**
  * Resolve a short git SHA for the build, suffixed with `+dirty` when the
@@ -78,45 +79,32 @@ async function main(): Promise<void> {
   const gitSha = resolveGitSha(ROOT_DIR);
   console.log(`📨 Building WhatsApp worker (bundling Baileys) — build ${buildId} (${gitSha})...`);
 
-  // Use the absolute path of the running Bun binary instead of "bun". On
-  // Windows a bare "bun" may resolve to a .cmd/.bat shim, and Bun refuses to
-  // pass args containing cmd.exe special characters (e.g. the quoted
-  // --define values below) through such wrappers (ERR_INVALID_ARG_VALUE).
-  const proc = spawn({
-    cmd: [
-      process.execPath, "run", "esbuild",
-      SOURCE,
-      "--bundle",
-      "--platform=node",
-      "--format=cjs",
-      "--target=node20",
-      `--outfile=${OUTPUT}`,
-      // Inject build provenance. The worker logs these on startup so an
-      // operator can confirm a rebuild actually propagated to the running
-      // subprocess after `bun run build:wa-worker`.
-      `--define:__WA_WORKER_BUILD_ID__=${JSON.stringify(buildId)}`,
-      `--define:__WA_WORKER_GIT_SHA__=${JSON.stringify(gitSha)}`,
-      // Mark only Electron + Baileys' runtime-optional peers external.
-      // Baileys itself and all its required transitive deps get bundled.
-      //
-      // The three optional deps below are unused by Craft Agent (no link
-      // previews, no terminal QR, no inline image transforms). Baileys
-      // guards them with try/catch so they fail silently at runtime.
-      "--external:electron",
-      "--external:link-preview-js",
-      "--external:qrcode-terminal",
-      "--external:jimp",
-    ],
-    cwd: ROOT_DIR,
-    stdout: "inherit",
-    stderr: "inherit",
+  // Use esbuild's JS API rather than the CLI shim. On Windows the CLI entry is
+  // a .cmd wrapper, and Bun refuses to pass arguments containing cmd.exe special
+  // characters (our --define values contain `:` and `"`).
+  await esbuild.build({
+    entryPoints: [SOURCE],
+    bundle: true,
+    platform: "node",
+    format: "cjs",
+    target: "node20",
+    outfile: OUTPUT,
+    // Inject build provenance. The worker logs these on startup so an
+    // operator can confirm a rebuild actually propagated to the running
+    // subprocess after `bun run build:wa-worker`.
+    define: {
+      __WA_WORKER_BUILD_ID__: JSON.stringify(buildId),
+      __WA_WORKER_GIT_SHA__: JSON.stringify(gitSha),
+    },
+    // Mark only Electron + Baileys' runtime-optional peers external.
+    // Baileys itself and all its required transitive deps get bundled.
+    //
+    // The three optional deps below are unused by Craft Agent (no link
+    // previews, no terminal QR, no inline image transforms). Baileys
+    // guards them with try/catch so they fail silently at runtime.
+    external: ["electron", "link-preview-js", "qrcode-terminal", "jimp"],
+    logLevel: "info",
   });
-
-  const exitCode = await proc.exited;
-  if (exitCode !== 0) {
-    console.error("❌ WhatsApp worker build failed with exit code", exitCode);
-    process.exit(exitCode);
-  }
 
   console.log("🔍 Verifying worker output...");
   const verification = await verifyJsFile(OUTPUT);

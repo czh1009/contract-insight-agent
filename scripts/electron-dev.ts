@@ -203,7 +203,7 @@ function copyResources(): void {
 async function buildWaWorker(): Promise<void> {
   console.log("📨 Building WhatsApp worker...");
   const proc = spawn({
-    cmd: [process.execPath, "run", "scripts/build-wa-worker.ts"],
+    cmd: ["bun", "run", "scripts/build-wa-worker.ts"],
     cwd: ROOT_DIR,
     stdout: "inherit",
     stderr: "inherit",
@@ -336,7 +336,7 @@ async function runEsbuild(
 async function buildPiAgentServer(): Promise<{ success: boolean; error?: string }> {
   try {
     const proc = spawn({
-      cmd: [process.execPath, "build", "src/index.ts", "--outdir=dist", "--target=bun", "--format=esm"],
+      cmd: ["bun", "build", "src/index.ts", "--outdir=dist", "--target=bun", "--format=esm"],
       cwd: PI_AGENT_SERVER_DIR,
       stdout: "pipe",
       stderr: "pipe",

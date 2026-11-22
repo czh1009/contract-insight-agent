@@ -72,6 +72,3 @@ credentials.enc
 # act (local GitHub Actions runner)
 .secrets
 .actrc
-
-# Personal study materials (not part of the open-source project)
-学习资料/

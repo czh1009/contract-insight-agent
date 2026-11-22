@@ -85,7 +85,7 @@ async function verifyJsFile(filePath: string): Promise<{ valid: boolean; error?:
 async function buildEntry(entry: string, outfile: string): Promise<number> {
   const proc = spawn({
     cmd: [
-      process.execPath, "run", "esbuild",
+      "bun", "run", "esbuild",
       entry,
       "--bundle",
       "--platform=node",

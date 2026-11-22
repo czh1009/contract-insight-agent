@@ -213,9 +213,13 @@ export function matcherMatchesSdk(matcher: AutomationMatcher, event: AgentEvent,
  * values into the string "undefined".
  */
 export function cleanEnv(): Record<string, string> {
-  return Object.fromEntries(
+  const env = Object.fromEntries(
     Object.entries(process.env).filter((e): e is [string, string] => e[1] !== undefined)
   );
+  // Windows exposes the variable as `Path`; mirror it to `PATH` so automation
+  // commands that look up PATH keep working cross-platform.
+  if (!env.PATH && env.Path) env.PATH = env.Path;
+  return env;
 }
 
 /** Keys skipped when iterating payload fields for env vars */

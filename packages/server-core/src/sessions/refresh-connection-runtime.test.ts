@@ -197,7 +197,12 @@ describe('refreshConnectionRuntime', () => {
     expect(agent.updateRuntimeConfig).toHaveBeenCalledTimes(1)
   })
 
-  it('records customModels with the per-model supportsImages flag in the IPC payload', async () => {
+  // End-to-end shape check requires a real `slug-A` connection to be resolvable
+  // from the user's config; skip on clean profiles/CI where none is configured.
+  const shapeCheckConnectionAvailable =
+    resolveBackendContext({ sessionConnectionSlug: 'slug-A' }).connection != null
+
+  it.skipIf(!shapeCheckConnectionAvailable)('records customModels with the per-model supportsImages flag in the IPC payload', async () => {
     // End-to-end shape check: when the session's connection resolves to a
     // pi_compat connection with explicit per-model `supportsImages`, the
     // helper must forward that field on `customModels` so the Pi subprocess

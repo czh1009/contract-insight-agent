@@ -2103,9 +2103,18 @@ export class BrowserPaneManager implements IBrowserPaneManager {
     }
 
     this.destroyingIds.delete(instance.id)
-    this.closePopupsForParent(instance.id, 'parent_destroy')
-    this.applyAgentControlLock(instance, false)
-    this.updateNativeOverlayState(instance)
+    // Cleanup failures must never prevent the instance from being removed.
+    for (const cleanup of [
+      () => this.closePopupsForParent(instance.id, 'parent_destroy'),
+      () => this.applyAgentControlLock(instance, false),
+      () => this.updateNativeOverlayState(instance),
+    ]) {
+      try {
+        cleanup()
+      } catch (error) {
+        mainLog.warn(`[browser-pane] finalize cleanup failed id=${instance.id} error=${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
     instance.cdp.detach()
     this.instances.delete(instance.id)
     this.removedCallback?.(instance.id)
@@ -3505,7 +3514,7 @@ export class BrowserPaneManager implements IBrowserPaneManager {
       }
     })
 
-    pageWc.on('did-create-window', (popupWindow, details) => {
+    pageWc.on('did-create-window', (_event, popupWindow, details) => {
       const popupUrl = details?.url || popupWindow.webContents.getURL?.() || 'about:blank'
       this.registerPopupWindow(instance, popupWindow, popupUrl)
     })

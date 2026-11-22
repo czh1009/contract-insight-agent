@@ -6,6 +6,7 @@
  * by Electron's macOS sandbox — see issue #697).
  */
 
+import { existsSync } from 'node:fs';
 import { CraftMcpClient } from './client.js';
 import { debug } from '../utils/debug.ts';
 import { normalizeMcpUrl } from '../sources/server-builder.ts';
@@ -315,6 +316,16 @@ export async function validateStdioMcpConnection(
   config: StdioValidationConfig
 ): Promise<McpValidationResult> {
   const { command, args = [], env = {}, timeout = 30000 } = config;
+
+  // Fail fast for path-like commands that don't exist. On Windows the spawn
+  // error surfaces as a localized stderr message ("系统找不到指定的路径") that
+  // never contains ENOENT, so mapping the raw error text is unreliable.
+  if ((command.includes('/') || command.includes('\\')) && !existsSync(command)) {
+    return {
+      success: false,
+      error: `Command not found: "${command}". Install the required dependency and try again.`,
+    };
+  }
 
   // Two-watchdog connect phase. Most "MCP doesn't work" failures never
   // complete the `initialize` handshake, so we want fast diagnostics — but

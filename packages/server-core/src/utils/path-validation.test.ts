@@ -49,7 +49,11 @@ describe('validatePathFormat', () => {
 })
 
 describe('isValidWorkingDirectory', () => {
-  it('accepts an existing Unix directory', () => {
+  // These exercise host filesystem checks against Unix paths, which the validator
+  // rejects outright when running on Windows ("Windows drive path is not valid on this server").
+  const isWindows = process.platform === 'win32'
+
+  it.skipIf(isWindows)('accepts an existing Unix directory', () => {
     const dir = mkdtempSync(join(tmpdir(), 'craft-agent-path-validation-'))
     try {
       expect(isValidWorkingDirectory(dir, 'darwin')).toEqual({ valid: true })
@@ -58,7 +62,7 @@ describe('isValidWorkingDirectory', () => {
     }
   })
 
-  it('rejects a file path', () => {
+  it.skipIf(isWindows)('rejects a file path', () => {
     const dir = mkdtempSync(join(tmpdir(), 'craft-agent-path-validation-'))
     const file = join(dir, 'file.txt')
     writeFileSync(file, 'x')

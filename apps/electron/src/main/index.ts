@@ -143,9 +143,13 @@ if (isDebugMode) {
 {
   // In packaged app: resources are at process.resourcesPath/app/resources/
   // In dev: resources are at __dirname/../resources/ (sibling of dist/)
-  const resourcesBase = app.isPackaged
-    ? join(process.resourcesPath, 'app')
-    : join(__dirname, '..')
+  // NOTE: Electron 39 reports app.isPackaged=true even when launched with an
+  // app directory (process.defaultApp=true), so detect the dev layout by the
+  // presence of the copied resources directory instead.
+  const isDevLayout = existsSync(join(__dirname, '..', 'resources'))
+  const resourcesBase = isDevLayout
+    ? join(__dirname, '..')
+    : join(process.resourcesPath, 'app')
   const platformKey = `${process.platform}-${process.arch}`
   const uvPlatformDir = join(resourcesBase, 'resources', 'bin', platformKey)
   const uvBinary = join(uvPlatformDir, process.platform === 'win32' ? 'uv.exe' : 'uv')
@@ -158,7 +162,7 @@ if (isDebugMode) {
   // Runtime resolver hints for shared session tools
   process.env.CRAFT_IS_PACKAGED = app.isPackaged ? '1' : '0'
   process.env.CRAFT_RESOURCES_BASE = resourcesBase
-  process.env.CRAFT_APP_ROOT = app.isPackaged ? app.getAppPath() : process.cwd()
+  process.env.CRAFT_APP_ROOT = isDevLayout ? process.cwd() : app.getAppPath()
 
   process.env.CRAFT_UV = bundledUvExists ? uvBinary : (fallbackUv ?? uvBinary)
 
@@ -169,15 +173,15 @@ if (isDebugMode) {
   }
 
   process.env.CRAFT_SCRIPTS = scriptsDir
-  process.env.CRAFT_COMMANDS_ENTRY = app.isPackaged
-    ? join(app.getAppPath(), 'packages', 'craft-agents-commands', 'src', 'main.ts')
-    : join(process.cwd(), 'packages', 'craft-agents-commands', 'src', 'main.ts')
-  process.env.CRAFT_CLI_ENTRY = app.isPackaged
-    ? join(app.getAppPath(), 'packages', 'craft-cli', 'src', 'cli.ts')
-    : join(process.cwd(), 'packages', 'craft-cli', 'src', 'cli.ts')
-  process.env.CRAFT_COMMANDS_DOC_PATH = app.isPackaged
-    ? join(resourcesBase, 'resources', 'docs', 'craft-cli.md')
-    : join(process.cwd(), 'apps', 'electron', 'resources', 'docs', 'craft-cli.md')
+  process.env.CRAFT_COMMANDS_ENTRY = isDevLayout
+    ? join(process.cwd(), 'packages', 'craft-agents-commands', 'src', 'main.ts')
+    : join(app.getAppPath(), 'packages', 'craft-agents-commands', 'src', 'main.ts')
+  process.env.CRAFT_CLI_ENTRY = isDevLayout
+    ? join(process.cwd(), 'packages', 'craft-cli', 'src', 'cli.ts')
+    : join(app.getAppPath(), 'packages', 'craft-cli', 'src', 'cli.ts')
+  process.env.CRAFT_COMMANDS_DOC_PATH = isDevLayout
+    ? join(process.cwd(), 'apps', 'electron', 'resources', 'docs', 'craft-cli.md')
+    : join(resourcesBase, 'resources', 'docs', 'craft-cli.md')
   process.env.CRAFT_CLI_DOC_PATH = process.env.CRAFT_COMMANDS_DOC_PATH
   process.env.CRAFT_AGENT_VERSION = app.getVersion()
   // Prepend both generic wrappers dir and platform uv dir:
